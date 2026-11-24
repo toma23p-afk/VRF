@@ -1,0 +1,40 @@
+name: VRF agent
+
+on:
+  schedule:
+    - cron: "*/15 7-21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      scan:
+        description: "Wymus skan ostatniej swiecy"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vrf-agent
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Agent
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python vrf_agent.py ${{ inputs.scan && '--scan' || '' }}
+      - name: Zapis stanu
+        run: |
+          git config user.name "vrf-bot"
+          git config user.email "vrf-bot@users.noreply.github.com"
+          mkdir -p state
+          git add state/vrf_state.json
+          git diff --cached --quiet || (git commit -m "VRF state" && git push)
