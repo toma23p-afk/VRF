@@ -2,9 +2,10 @@
 
 # --- Uniwersum (tylko instrumenty z prawdziwym wolumenem: akcje) ---
 # WIG20 – sprawdź aktualny skład po każdej rewizji GPW (marzec/czerwiec/wrzesień/grudzień)
+# CCC -> MDV (Modivo, od 19.02.2026), SPL -> EBP (Erste Bank Polska, od 28.04.2026)
 WIG20 = [
-    "ALE", "ALR", "BDX", "CCC", "CDR", "DNP", "KGH", "KRU", "KTY", "LPP",
-    "MBK", "MDV", "PCO", "PEO", "PGE", "PKN", "PKO", "PZU", "SPL", "TPE", "ZAB",
+    "ALE", "ALR", "BDX", "CDR", "DNP", "EBP", "KGH", "KRU", "KTY", "LPP",
+    "MBK", "MDV", "PCO", "PEO", "PGE", "PKN", "PKO", "PZU", "TPE", "ZAB",
 ]
 GPW = [f"{t}.WA" for t in WIG20]
 
@@ -30,6 +31,11 @@ EMA_SLOW = 26
 TREND_LOOKBACK = 10     # trend przed świecą: min. TREND_MIN z ostatnich N zamknięć po złej stronie EMA26
 TREND_MIN = 6
 CONFIRM_BARS = 3        # potwierdzenie: wybicie max/min świecy sygnałowej w ciągu N sesji
+
+# --- Alerty agenta ---
+# Backtest GPW 10 lat: LONG ma przewagę, SHORT ~0. Domyślnie tylko LONG.
+SHORT_MODE = "off"      # "off" – brak alertów SHORT | "info" – sam alert, bez POTW | "full" – jak LONG
+MAIN_TARGET_R = 3       # główny cel w alercie POTW
 
 # --- Backtest ---
 BT_PERIOD = "10y"

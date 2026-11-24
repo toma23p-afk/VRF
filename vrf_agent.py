@@ -97,7 +97,11 @@ def eod_scan(market, cfg, st, today):
         if row["signal"] == 0:
             continue
         side = "LONG" if row["signal"] == 1 else "SHORT"
+        if side == "SHORT" and C.SHORT_MODE == "off":
+            continue
         hits.append((t, side, row))
+        if side == "SHORT" and C.SHORT_MODE == "info":
+            continue  # tylko informacja, bez śledzenia potwierdzenia
         st["pending"].append({
             "market": market, "ticker": t, "side": side, "date": today,
             "high": float(row["High"]), "low": float(row["Low"]),
@@ -108,6 +112,10 @@ def eod_scan(market, cfg, st, today):
         trig = r["High"] if side == "LONG" else r["Low"]
         sl = r["Low"] if side == "LONG" else r["High"]
         arrow = "🟢" if side == "LONG" else "🔴"
+        if side == "SHORT" and C.SHORT_MODE == "info":
+            tg(f"ℹ️ VRF SHORT (info, bez POTW) – {name(t)}: wolumen {r['vol_ratio']:.1f}× średniej, "
+               f"zamknięcie {fmt(r['Close'])}. W backteście GPW SHORT nie miał przewagi.")
+            continue
         tg(f"{arrow} <b>VRF {side}</b> {'(KEY REVERSAL) ' if r['key'] else ''}– <b>{name(t)}</b>\n"
            f"Kulminacja wolumenu: {r['vol_ratio']:.1f}× średniej 20 sesji\n"
            f"Zamknięcie {fmt(r['Close'])} ({r['close_pos']*100:.0f}% zakresu świecy)\n"
@@ -138,9 +146,11 @@ def check_confirmations(market, st, today):
         r = abs(entry - sl)
         if confirmed and not broken:
             sgn = 1 if p["side"] == "LONG" else -1
+            k = C.MAIN_TARGET_R
+            others = " | ".join(f"{x}R {fmt(entry+sgn*x*r)}" for x in (1, 2, 3) if x != k)
             tg(f"✅ <b>VRF POTW {p['side']}</b> – <b>{name(p['ticker'])}</b> (świeca z {p['date']})\n"
                f"Wejście: {fmt(entry)} | teraz {fmt(last)}\nSL: {fmt(sl)} (ryzyko {r/entry*100:.1f}%)\n"
-               f"Cele: 1R {fmt(entry+sgn*r)} | 2R {fmt(entry+sgn*2*r)} | 3R {fmt(entry+sgn*3*r)}")
+               f"🎯 <b>Cel {k}R: {fmt(entry+sgn*k*r)}</b>\nPośrednie: {others}")
             done.append(p)
         elif broken:
             tg(f"⚪ VRF anulowany – {name(p['ticker'])} ({p['side']}, {p['date']}): "
